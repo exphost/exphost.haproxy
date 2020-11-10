@@ -1,0 +1,68 @@
+- name: debug
+  debug:
+    msg: "Jeste Haproxe"
+- block:
+    - name: install haproxy and helper libs
+      yum:
+        name:
+          - haproxy
+          - policycoreutils-python
+  become: True
+  become_user: root
+
+- block:
+    - name: create dirs 1
+      file:
+        path: "{{item}}"
+        state: directory
+      loop:
+        - "{{app.value.haproxy.user.home}}/haproxy"
+        - "{{app.value.haproxy.user.home}}/haproxy/conf"
+        - "{{app.value.haproxy.user.home}}/haproxy/var"
+    - name: create dirs 2
+      file:
+        path: "{{item}}"
+        state: directory
+        setype: var_run_t
+      loop:
+        - "{{app.value.haproxy.user.home}}/haproxy/run"
+    - name: copy haproxy config
+      template:
+        src: haproxy.cfg
+        dest: "{{app.value.haproxy.user.home}}/haproxy/conf/haproxy.cfg"
+        validate: haproxy -c -f %s
+      notify:
+        - restart haproxy
+
+  become: True
+  become_user: "{{app.value.haproxy.user.user}}"
+- block:
+    - name: copy haproxy service
+      template:
+        src: haproxy.service
+        dest: "/etc/systemd/system/{{app.value.haproxy.user.user}}-haproxy-{{app.key}}.service"
+      notify:
+        - restart haproxy
+    - name: add listening ports to selinux
+      seport:
+        ports: "{{item}}"
+        proto: tcp
+        setype: http_port_t
+        state: present
+      loop: '{{app.value.haproxy.proxies|json_query("*.port")}}'
+    - name: add destination ports to selinux
+      seport:
+        ports: "{{item.split(':')[1]}}"
+        proto: tcp
+        setype: http_port_t
+        state: present
+      loop: '{{app.value.haproxy.proxies|json_query("*.servers[]")}}'
+
+    - meta: flush_handlers
+    - name: start haproxy
+      systemd:
+        name: "{{app.value.haproxy.user.user}}-haproxy-{{app.key}}.service"
+        state: started
+        daemon_reload: true
+  become: True
+  become_user: root
