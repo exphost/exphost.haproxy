@@ -3,11 +3,20 @@
   debug:
     msg: "Jeste Haproxe"
 - block:
-    - name: install haproxy and helper libs
+    - name: install haproxy
       yum:
         name:
           - haproxy
-          - policycoreutils-python
+
+    - name: install policycoreutils
+      yum:
+        name: policycoreutils-python
+      when: ansible_distribution_major_version == "7"
+
+    - name: install policycoreutils
+      yum:
+        name: policycoreutils-python-utils
+      when: ansible_distribution_major_version == "8"
   become: true
   become_user: root
 
@@ -36,8 +45,10 @@
         setype: etc_t
         validate: haproxy -c -f %s
         mode: 0640
+        owner: "{{ app.value.haproxy.user.user }}"
       notify:
         - restart haproxy
+      become_user: root # TODO need to find out why it has to be root + owner instead of become_user: haproxy
 
   become: true
   become_user: "{{ app.value.haproxy.user.user }}"
