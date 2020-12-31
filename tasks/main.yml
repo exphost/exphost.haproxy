@@ -30,6 +30,7 @@
       template:
         src: haproxy.cfg
         dest: "{{app.value.haproxy.user.home}}/haproxy/conf/haproxy.cfg"
+        setype: etc_t
         validate: haproxy -c -f %s
       notify:
         - restart haproxy
