@@ -1,3 +1,4 @@
+---
 - name: debug
   debug:
     msg: "Jeste Haproxe"
@@ -7,63 +8,67 @@
         name:
           - haproxy
           - policycoreutils-python
-  become: True
+  become: true
   become_user: root
 
 - block:
     - name: create dirs 1
       file:
-        path: "{{item}}"
+        path: "{{ item }}"
         state: directory
+        mode: 0755
       loop:
-        - "{{app.value.haproxy.user.home}}/haproxy"
-        - "{{app.value.haproxy.user.home}}/haproxy/conf"
-        - "{{app.value.haproxy.user.home}}/haproxy/var"
+        - "{{ app.value.haproxy.user.home }}/haproxy"
+        - "{{ app.value.haproxy.user.home }}/haproxy/conf"
+        - "{{ app.value.haproxy.user.home }}/haproxy/var"
     - name: create dirs 2
       file:
-        path: "{{item}}"
+        path: "{{ item }}"
         state: directory
         setype: var_run_t
+        mode: 0755
       loop:
-        - "{{app.value.haproxy.user.home}}/haproxy/run"
+        - "{{ app.value.haproxy.user.home }}/haproxy/run"
     - name: copy haproxy config
       template:
         src: haproxy.cfg
-        dest: "{{app.value.haproxy.user.home}}/haproxy/conf/haproxy.cfg"
+        dest: "{{ app.value.haproxy.user.home }}/haproxy/conf/haproxy.cfg"
         setype: etc_t
         validate: haproxy -c -f %s
+        mode: 0640
       notify:
         - restart haproxy
 
-  become: True
-  become_user: "{{app.value.haproxy.user.user}}"
+  become: true
+  become_user: "{{ app.value.haproxy.user.user }}"
 - block:
     - name: copy haproxy service
       template:
         src: haproxy.service
-        dest: "/etc/systemd/system/{{app.value.haproxy.user.user}}-haproxy-{{app.key}}.service"
+        dest: "/etc/systemd/system/{{ app.value.haproxy.user.user }}-haproxy-{{ app.key }}.service"
+        mode: 0644
       notify:
         - restart haproxy
     - name: add listening ports to selinux
       seport:
-        ports: "{{item}}"
+        ports: "{{ item }}"
         proto: tcp
         setype: http_port_t
         state: present
-      loop: '{{app.value.haproxy.proxies|json_query("*.port")}}'
+      loop: '{{ app.value.haproxy.proxies|json_query("*.port") }}'
     - name: add destination ports to selinux
       seport:
-        ports: "{{item.split(':')[1]}}"
+        ports: "{{ item.split(':')[1] }}"
         proto: tcp
         setype: http_port_t
         state: present
-      loop: '{{app.value.haproxy.proxies|json_query("*.servers[]")}}'
+      loop: '{{ app.value.haproxy.proxies|json_query("*.servers[]") }}'
 
     - meta: flush_handlers
     - name: start haproxy
       systemd:
-        name: "{{app.value.haproxy.user.user}}-haproxy-{{app.key}}.service"
+        name: "{{ app.value.haproxy.user.user }}-haproxy-{{ app.key }}.service"
         state: started
         daemon_reload: true
-  become: True
+  become: true
   become_user: root

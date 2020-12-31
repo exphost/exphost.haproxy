@@ -1,7 +1,8 @@
+---
 - name: restart haproxy
   systemd:
-    name: "{{app.value.haproxy.user.user}}-haproxy-{{app.key}}.service"
+    name: "{{ app.value.haproxy.user.user }}-haproxy-{{ app.key }}.service"
     state: restarted
     daemon_reload: true
-  become: True
+  become: true
   become_user: root
