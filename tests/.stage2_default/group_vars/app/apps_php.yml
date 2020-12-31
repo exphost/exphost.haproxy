@@ -1,0 +1,23 @@
+apps_httpd:
+  httpd:
+    httpd:
+      enabled: True
+      type: exphost.httpd
+      user:
+        uid: 515
+      configs:
+        ports:
+          - 8001
+      vhosts:
+        test1:
+          urls:
+            - test-php.example.com
+          root: var/www/test-php
+      downloads:
+        - src:
+            type: git
+            repo:
+              path: https://github.com/exphost/test_app.git
+              version: php_hostname
+          dest:
+            path: /app/httpd/httpd/var/www/test-php

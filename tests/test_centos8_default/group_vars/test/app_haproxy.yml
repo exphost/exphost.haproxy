@@ -1,0 +1,14 @@
+apps_haproxy_internal:
+  haproxy_test:
+    haproxy:
+      enabled: True
+      type: exphost.haproxy
+      user:
+        uid: 507
+      proxies:
+        test_app:
+          mode: tcp
+          port: 7777
+          servers:
+            - "app-0.some.example.domain.xyz:8001"
+            - "app-1.some.example.domain.xyz:8001"
