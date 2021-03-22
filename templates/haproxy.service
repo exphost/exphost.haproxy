@@ -7,6 +7,8 @@ User={{app.value.haproxy.user.user}}
 ExecStart=/usr/sbin/haproxy -f {{app.value.haproxy.user.home}}/haproxy/conf/haproxy.cfg -p {{app.value.haproxy.user.home}}/haproxy/run/haproxy.pid
 ExecReload=/bin/kill -USR2 $MAINPID
 KillMode=mixed
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
